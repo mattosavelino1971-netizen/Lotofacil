@@ -1,0 +1,555 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lotofácil | Meu Portal</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --roxo: #642f8d;
+      --borda: #e3d9ed;
+      --fundo: #f8f4fc;
+      --texto: #251831;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--fundo);
+      color: var(--texto);
+      font: 1rem/1.5 system-ui, sans-serif;
+    }
+
+    header {
+      background: #281638;
+      color: white;
+      padding: 1.5rem max(1rem, calc((100% - 1050px) / 2));
+      border-bottom: 5px solid #aa73d3;
+    }
+
+    header a { color: #ead2ff; }
+    h1 { margin: .4rem 0; font-size: clamp(2.2rem, 7vw, 4rem); }
+    h2 { font-size: 1.4rem; margin: 0 0 .65rem; }
+    p { margin: .5rem 0; }
+
+    main {
+      max-width: 1082px;
+      margin: auto;
+      padding: 1rem;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem;
+      align-items: start;
+    }
+
+    section {
+      background: white;
+      padding: clamp(.9rem, 3vw, 1.4rem);
+      border: 1px solid var(--borda);
+      border-radius: 16px;
+    }
+
+    .largura-total { grid-column: 1 / -1; }
+    .linha, .bolas { display: flex; flex-wrap: wrap; gap: .45rem; }
+    .linha { margin: .7rem 0; align-items: center; }
+    .bolas { margin: .45rem 0; gap: .25rem; }
+
+    .volante {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: .35rem;
+      margin: .8rem 0;
+    }
+
+    button, input, select, textarea {
+      min-height: 44px;
+      max-width: 100%;
+      font: inherit;
+      color: inherit;
+      background: white;
+      border: 1px solid #bfaed0;
+      border-radius: 8px;
+      padding: .45rem .65rem;
+    }
+
+    button { cursor: pointer; font-weight: 650; }
+    button:hover { border-color: var(--roxo); }
+    button:disabled { opacity: .55; cursor: default; }
+    :focus-visible { outline: 3px solid #a955d4; outline-offset: 2px; }
+
+    .principal, .volante button[aria-pressed="true"] {
+      background: var(--roxo);
+      color: white;
+      border-color: var(--roxo);
+    }
+
+    .volante button { padding: .3rem; }
+    label { display: block; margin: .6rem 0 .25rem; font-weight: 650; }
+    textarea { width: 100%; resize: vertical; }
+    input[type="number"] { width: 10rem; }
+    article { border-top: 1px solid var(--borda); padding: .7rem 0; }
+    .bola { padding: .18rem .4rem; background: #f2e9f9; border-radius: 7px; }
+    .acerto { background: #d5f1dc; color: #174b28; font-weight: bold; }
+    .suave, small { color: #5c526d; }
+    a { color: var(--roxo); }
+    code { overflow-wrap: anywhere; }
+    footer { text-align: center; padding: 0 1rem 1.4rem; }
+
+    @media (max-width: 720px) {
+      main { grid-template-columns: minmax(0, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <a href="../index.html">← Meu Portal</a>
+    <h1>Lotofácil</h1>
+    <p>Monte seus jogos e confira os resultados. As estatísticas não preveem sorteios.</p>
+  </header>
+
+  <main>
+    <section>
+      <h2>Montar jogo</h2>
+      <label for="quantidade">Quantidade de dezenas</label>
+      <select id="quantidade">
+        <option>15</option>
+        <option>16</option>
+        <option>17</option>
+        <option>18</option>
+        <option>19</option>
+        <option>20</option>
+      </select>
+      <div id="volante" class="volante" role="group" aria-label="Dezenas de 01 a 25"></div>
+      <p id="estatisticas" aria-live="polite"></p>
+      <div class="linha">
+        <button id="gerar" class="principal">Gerar jogo aleatório</button>
+        <button id="limpar">Limpar</button>
+        <button id="salvar">Salvar jogo</button>
+      </div>
+      <p id="mensagem-jogo" class="suave" role="status"></p>
+    </section>
+
+    <section>
+      <h2>Conferir resultado</h2>
+      <p>Use um concurso do histórico ou digite as 15 dezenas sorteadas.</p>
+      <label for="concurso">Número do concurso (opcional)</label>
+      <input id="concurso" type="number" min="1" step="1" inputmode="numeric">
+      <label for="sorteio">Dezenas sorteadas</label>
+      <textarea id="sorteio" rows="2" placeholder="Separe por espaços ou vírgulas"></textarea>
+      <div class="linha">
+        <button id="conferir" class="principal">Conferir jogos</button>
+        <button id="registrar">Conferir e salvar concurso</button>
+      </div>
+      <p id="mensagem-conferencia" class="suave" role="status"></p>
+      <div id="conferencia"></div>
+    </section>
+
+    <section>
+      <h2>Meus jogos</h2>
+      <p id="mensagem-armazenamento" class="suave" role="status"></p>
+      <div id="jogos"></div>
+    </section>
+
+    <section>
+      <h2>Histórico de concursos</h2>
+      <p>Consulte os cinco concursos mais recentes ou busque pelo número.</p>
+      <div class="linha">
+        <button id="atualizar" class="principal">Atualizar recentes</button>
+      </div>
+      <label for="busca">Número do concurso para buscar</label>
+      <div class="linha">
+        <input id="busca" type="number" min="1" step="1" inputmode="numeric">
+        <button id="buscar">Buscar concurso</button>
+      </div>
+      <p id="mensagem-historico" class="suave" role="status"></p>
+      <div id="historico"></div>
+    </section>
+
+    <section class="largura-total">
+      <details>
+        <summary>Como integrar ao Meu Portal</summary>
+        <p>Salve este arquivo em <strong>MEU PORTAL → lotofacil → index.html</strong>.</p>
+        <p>No <code>index.html</code> principal, adicione este link junto aos links de <strong>Apps &amp; Links</strong>:</p>
+        <p><code>&lt;a href="lotofacil/index.html"&gt;Lotofácil&lt;/a&gt;</code></p>
+        <p>Para acessar os jogos salvos, abra o arquivo pelo mesmo caminho e no mesmo navegador.</p>
+      </details>
+    </section>
+  </main>
+
+  <footer>
+    <a href="https://loterias.caixa.gov.br/Paginas/LOTOFACIL.aspx"
+       target="_blank" rel="noopener noreferrer">Resultados oficiais da CAIXA</a>
+  </footer>
+
+  <script>
+    "use strict";
+
+    const $ = id => document.getElementById(id);
+    const chave = "meu-portal-lotofacil-copia-v1";
+    const api = "https://servicebus2.caixa.gov.br/portaldeloterias/api/lotofacil";
+    const manual = "Inserido manualmente";
+    const oficial = "CAIXA · consulta online";
+    const dezenas = Array.from({ length: 25 }, (_, i) => i + 1);
+    const ordenar = valores => [...valores].sort((a, b) => a - b);
+    const formatar = n => String(n).padStart(2, "0");
+    const concursoValido = n => Number.isSafeInteger(n) && n > 0;
+
+    function dezenasValidas(lista, minimo, maximo = minimo) {
+      return Array.isArray(lista) && lista.length >= minimo && lista.length <= maximo &&
+        new Set(lista).size === lista.length &&
+        lista.every(n => Number.isInteger(n) && n >= 1 && n <= 25);
+    }
+
+    let dados = {};
+    try {
+      dados = JSON.parse(localStorage.getItem(chave) || "{}") || {};
+    } catch {
+      $("mensagem-armazenamento").textContent = "Não foi possível ler os dados salvos.";
+    }
+
+    const jogos = Array.isArray(dados.jogos)
+      ? dados.jogos.filter(jogo => dezenasValidas(jogo, 15, 20)).map(ordenar)
+      : [];
+    const historico = new Map([[3790, {
+      numero: 3790,
+      data: "27/09/2026",
+      numeros: [1, 3, 4, 5, 6, 7, 9, 11, 14, 15, 16, 17, 20, 21, 25],
+      fonte: "CAIXA · resultado incluído para uso offline"
+    }]]);
+
+    for (const item of Array.isArray(dados.historico) ? dados.historico : []) {
+      if (item && concursoValido(item.numero) && dezenasValidas(item.numeros, 15)) {
+        historico.set(item.numero, item);
+      }
+    }
+
+    let selecao = new Set(dezenasValidas(dados.selecao, 0, 20) ? dados.selecao : []);
+    let resultadoAtivo = null;
+    let consultando = false;
+    const quantidade = () => Number($("quantidade").value);
+
+    $("quantidade").value = Number.isInteger(dados.quantidade) &&
+      dados.quantidade >= Math.max(15, selecao.size) && dados.quantidade <= 20
+      ? dados.quantidade
+      : Math.max(15, selecao.size);
+
+    function gravar() {
+      try {
+        localStorage.setItem(chave, JSON.stringify({
+          quantidade: quantidade(),
+          selecao: ordenar(selecao),
+          jogos,
+          historico: [...historico.values()]
+        }));
+        $("mensagem-armazenamento").textContent = "";
+      } catch {
+        $("mensagem-armazenamento").textContent =
+          "O navegador não conseguiu salvar. Os dados ficam disponíveis enquanto a página estiver aberta.";
+      }
+    }
+
+    function criar(tag, texto, classe) {
+      const no = document.createElement(tag);
+      if (texto !== undefined) no.textContent = texto;
+      if (classe) no.className = classe;
+      return no;
+    }
+
+    function botao(texto, acao) {
+      const no = criar("button", texto);
+      no.type = "button";
+      no.addEventListener("click", acao);
+      return no;
+    }
+
+    function estatisticas(lista) {
+      const pares = lista.filter(n => n % 2 === 0).length;
+      const soma = lista.reduce((total, n) => total + n, 0);
+      return pares + " pares · " + (lista.length - pares) + " ímpares · Soma " + soma;
+    }
+
+    function mostrarDezenas(lista, acertos = []) {
+      const grupo = criar("div", undefined, "bolas");
+      for (const n of ordenar(lista)) {
+        const acertou = acertos.includes(n);
+        const bola = criar("span", formatar(n), acertou ? "bola acerto" : "bola");
+        if (acertou) bola.setAttribute("aria-label", formatar(n) + ", acerto");
+        grupo.append(bola);
+      }
+      return grupo;
+    }
+
+    const botoes = dezenas.map(n => {
+      const no = botao(formatar(n), () => {
+        if (selecao.has(n)) selecao.delete(n);
+        else if (selecao.size < quantidade()) selecao.add(n);
+        atualizarJogo();
+      });
+      $("volante").append(no);
+      return no;
+    });
+
+    function exibirJogo() {
+      dezenas.forEach((n, i) => {
+        const marcada = selecao.has(n);
+        botoes[i].setAttribute("aria-pressed", String(marcada));
+        botoes[i].disabled = !marcada && selecao.size >= quantidade();
+      });
+      $("salvar").disabled = selecao.size !== quantidade();
+      $("estatisticas").textContent = selecao.size + " de " + quantidade() +
+        " dezenas · " + estatisticas([...selecao]);
+    }
+
+    function atualizarJogo(mensagem = "") {
+      $("mensagem-jogo").textContent = mensagem;
+      exibirJogo();
+      exibirConferencia();
+      gravar();
+    }
+
+    $("quantidade").onchange = () => {
+      if (quantidade() < selecao.size) {
+        $("quantidade").value = selecao.size;
+        atualizarJogo("Desmarque algumas dezenas antes de reduzir a quantidade.");
+        return;
+      }
+      atualizarJogo();
+    };
+
+    $("gerar").onclick = () => {
+      const lista = [...dezenas];
+      for (let i = lista.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [lista[i], lista[j]] = [lista[j], lista[i]];
+      }
+      selecao = new Set(lista.slice(0, quantidade()));
+      atualizarJogo("Jogo aleatório gerado.");
+    };
+
+    $("limpar").onclick = () => {
+      selecao.clear();
+      atualizarJogo();
+    };
+
+    $("salvar").onclick = () => {
+      const jogo = ordenar(selecao);
+      if (jogo.length !== quantidade()) return;
+      if (jogos.some(item => item.join(",") === jogo.join(","))) {
+        $("mensagem-jogo").textContent = "Este jogo já está salvo.";
+        return;
+      }
+      jogos.unshift(jogo);
+      exibirJogos();
+      atualizarJogo("Jogo adicionado a Meus jogos.");
+    };
+
+    function exibirJogos() {
+      const lista = $("jogos");
+      lista.replaceChildren();
+      if (!jogos.length) lista.append(criar("p", "Seus jogos salvos aparecerão aqui."));
+
+      jogos.forEach((jogo, i) => {
+        const item = criar("article");
+        const acoes = criar("div", undefined, "linha");
+        acoes.append(
+          botao("Carregar jogo " + (i + 1), () => {
+            $("quantidade").value = jogo.length;
+            selecao = new Set(jogo);
+            atualizarJogo("Jogo carregado no volante.");
+            $("quantidade").focus();
+          }),
+          botao("Remover jogo " + (i + 1), () => {
+            jogos.splice(i, 1);
+            exibirJogos();
+            exibirConferencia();
+            gravar();
+          })
+        );
+        item.append(
+          criar("strong", "Jogo " + (i + 1) + " · " + jogo.length + " dezenas"),
+          mostrarDezenas(jogo),
+          criar("small", estatisticas(jogo)),
+          acoes
+        );
+        lista.append(item);
+      });
+    }
+
+    function exibirConferencia() {
+      const lista = $("conferencia");
+      lista.replaceChildren();
+      if (!resultadoAtivo) return;
+
+      const jogosParaConferir = jogos.map((jogo, i) => ["Jogo salvo " + (i + 1), jogo]);
+      if (selecao.size === quantidade()) {
+        jogosParaConferir.unshift(["Jogo atual", ordenar(selecao)]);
+      }
+      if (!jogosParaConferir.length) {
+        lista.append(criar("p", "Complete o jogo atual ou salve um jogo para ver os acertos."));
+      }
+
+      for (const [nome, jogo] of jogosParaConferir) {
+        const acertos = jogo.filter(n => resultadoAtivo.numeros.includes(n));
+        const item = criar("article");
+        item.append(
+          criar("strong", nome + " · " + acertos.length + " de 15 acertos"),
+          mostrarDezenas(jogo, acertos)
+        );
+        lista.append(item);
+      }
+    }
+
+    function selecionarResultado(resultado) {
+      resultadoAtivo = resultado;
+      const titulo = resultado.numero ? "Concurso " + resultado.numero : "Resultado informado";
+      $("mensagem-conferencia").textContent =
+        titulo + " · " + resultado.fonte + " · " + estatisticas(resultado.numeros);
+      exibirConferencia();
+    }
+
+    function conferirManual(salvar) {
+      const texto = $("sorteio").value.trim();
+      const partes = texto ? texto.split(/[\s,;]+/) : [];
+      const numeros = partes.map(parte => /^\d{1,2}$/.test(parte) ? Number(parte) : NaN);
+      const campo = $("concurso");
+      const numero = Number(campo.value);
+      let erro = "";
+
+      if (!dezenasValidas(numeros, 15)) {
+        erro = "Informe 15 dezenas diferentes, de 01 a 25.";
+      } else if (campo.validity.badInput || ((campo.value || salvar) && !concursoValido(numero))) {
+        erro = "Informe um número de concurso inteiro e maior que zero.";
+      }
+
+      if (erro) {
+        resultadoAtivo = null;
+        $("mensagem-conferencia").textContent = erro;
+        exibirConferencia();
+        return;
+      }
+
+      const resultado = { numero, numeros: ordenar(numeros), data: "", fonte: manual };
+      selecionarResultado(resultado);
+      if (!salvar) return;
+
+      const anterior = historico.get(numero);
+      if (anterior && anterior.fonte !== manual) {
+        $("mensagem-conferencia").textContent += ". O resultado da CAIXA já está no histórico.";
+        return;
+      }
+
+      historico.set(numero, resultado);
+      gravar();
+      exibirHistorico();
+    }
+
+    $("conferir").onclick = () => conferirManual(false);
+    $("registrar").onclick = () => conferirManual(true);
+
+    for (const id of ["concurso", "sorteio"]) {
+      $(id).addEventListener("input", () => {
+        resultadoAtivo = null;
+        $("mensagem-conferencia").textContent = "";
+        exibirConferencia();
+      });
+    }
+
+    function exibirHistorico() {
+      const lista = $("historico");
+      lista.replaceChildren();
+      for (const resultado of [...historico.values()].sort((a, b) => b.numero - a.numero)) {
+        const item = criar("article");
+        const titulo = "Concurso " + resultado.numero + (resultado.data ? " · " + resultado.data : "");
+        item.append(
+          criar("strong", titulo),
+          mostrarDezenas(resultado.numeros),
+          criar("p", resultado.fonte, "suave"),
+          botao("Usar concurso " + resultado.numero, () => {
+            $("concurso").value = resultado.numero;
+            $("sorteio").value = ordenar(resultado.numeros).map(formatar).join(" ");
+            selecionarResultado(resultado);
+            $("conferir").focus();
+          })
+        );
+        lista.append(item);
+      }
+    }
+
+    async function consultarCaixa(numero) {
+      const controle = new AbortController();
+      const tempo = setTimeout(() => controle.abort(), 6500);
+      try {
+        const endereco = numero ? api + "/" + numero : api;
+        const resposta = await fetch(endereco, { signal: controle.signal, cache: "no-store" });
+        if (!resposta.ok) throw new Error("Consulta indisponível");
+        const dados = await resposta.json();
+        const id = Number(dados.numero);
+        const numeros = Array.isArray(dados.listaDezenas) ? dados.listaDezenas.map(Number) : [];
+
+        if (!concursoValido(id) || (numero && id !== numero) || !dezenasValidas(numeros, 15)) {
+          throw new Error("Resultado inválido");
+        }
+
+        return {
+          numero: id,
+          data: typeof dados.dataApuracao === "string" ? dados.dataApuracao : "",
+          numeros: ordenar(numeros),
+          fonte: oficial
+        };
+      } finally {
+        clearTimeout(tempo);
+      }
+    }
+
+    async function atualizarHistorico(numero) {
+      if (consultando) return;
+      consultando = true;
+      $("atualizar").disabled = $("buscar").disabled = true;
+      const mensagem = $("mensagem-historico");
+      mensagem.textContent = "Consultando a CAIXA…";
+
+      try {
+        const primeiro = await consultarCaixa(numero);
+        const pedidos = numero ? [] : Array.from(
+          { length: Math.min(4, primeiro.numero - 1) },
+          (_, i) => consultarCaixa(primeiro.numero - i - 1)
+        );
+        const respostas = await Promise.allSettled(pedidos);
+        const recebidos = [
+          primeiro,
+          ...respostas.filter(item => item.status === "fulfilled").map(item => item.value)
+        ];
+        for (const resultado of recebidos) historico.set(resultado.numero, resultado);
+        gravar();
+        exibirHistorico();
+
+        mensagem.textContent = recebidos.length + " concurso(s) recebido(s) da CAIXA.";
+        if (recebidos.length < pedidos.length + 1) {
+          mensagem.textContent += " Alguns concursos recentes ficaram indisponíveis.";
+        }
+      } catch {
+        mensagem.textContent = numero && historico.has(numero)
+          ? "A consulta online falhou. Este concurso está no histórico local."
+          : "A consulta online falhou. Use o histórico local ou digite as dezenas sorteadas.";
+      } finally {
+        consultando = false;
+        $("atualizar").disabled = $("buscar").disabled = false;
+      }
+    }
+
+    $("atualizar").onclick = () => atualizarHistorico();
+    $("buscar").onclick = () => {
+      const numero = Number($("busca").value);
+      if (concursoValido(numero)) atualizarHistorico(numero);
+      else $("mensagem-historico").textContent = "Informe um número de concurso inteiro e maior que zero.";
+    };
+
+    exibirJogo();
+    exibirJogos();
+    exibirHistorico();
+    atualizarHistorico();
+  </script>
+</body>
+</html>
